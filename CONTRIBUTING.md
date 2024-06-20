@@ -91,11 +91,13 @@ If you encounter any issues, ensure that you are using the following versions of
 
 - Rust version: **1.78**
 - Node version: **18.18**
-- Pnpm version: **9.0.6**
+- Pnpm version: **9.1.1**
 
 After cleaning out your build artifacts using `pnpm clean`, `git clean`, or `cargo clean`, it is necessary to re-run the `setup-system` script.
 
 Make sure to read the [guidelines](https://spacedrive.com/docs/developers/prerequisites/guidelines) to ensure that your code follows a similar style to ours.
+
+After you finish making your changes and committed them to your branch, make sure to execute `pnpm autoformat` to fix any style inconsistency in your code.
 
 ##### Mobile App
 
