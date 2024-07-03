@@ -1,6 +1,6 @@
 [package]
 name = "sd-core"
-version = "0.3.1"
+version = "0.3.2"
 description = "Virtual distributed filesystem engine that powers Spacedrive."
 authors = ["Spacedrive Technology Inc <support@spacedrive.com>"]
 rust-version = "1.78"
@@ -158,6 +158,9 @@ icrate = { version = "0.1.2", features = [
 	"Foundation_NSString",
 	"Foundation_NSNumber",
 ] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+tracing-android = "0.2.0"
 
 [dev-dependencies]
 # Workspace dependencies

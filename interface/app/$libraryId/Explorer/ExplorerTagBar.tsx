@@ -1,8 +1,9 @@
 import { Circle } from '@phosphor-icons/react';
 import clsx from 'clsx';
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
 	ExplorerItem,
+	getItemObject,
 	Tag,
 	Target,
 	useLibraryMutation,
@@ -17,7 +18,7 @@ import { keybindForOs } from '~/util/keybinds';
 import { useExplorerContext } from './Context';
 import { explorerStore } from './store';
 
-export const TAG_BAR_HEIGHT = 64;
+export const TAG_BAR_HEIGHT = 54;
 const NUMBER_KEYCODES: string[][] = [
 	['Key1'],
 	['Key2'],
@@ -87,27 +88,30 @@ export const ExplorerTagBar = () => {
 		const element = tagsRef.current;
 		if (element) {
 			setIsTagsOverflowing(
-				element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
+				element.scrollHeight > element.clientHeight ||
+					element.scrollWidth > element.clientWidth
 			);
 		}
-	}
+	};
 
 	useEffect(() => {
 		const element = tagsRef.current;
 		if (!element) return;
 		//handles initial render when not resizing
-		setIsTagsOverflowing(element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth)
+		setIsTagsOverflowing(
+			element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
+		);
 		//make sure state updates when window resizing
 		window.addEventListener('resize', () => {
 			updateOverflowState();
-		})
+		});
 		//remove listeners on unmount
 		return () => {
 			window.removeEventListener('resize', () => {
 				updateOverflowState();
-			})
-		}
-	}, [tagsRef])
+			});
+		};
+	}, [tagsRef]);
 
 	const [tagListeningForKeyPress, setTagListeningForKeyPress] = useState<number | undefined>();
 
@@ -147,22 +151,51 @@ export const ExplorerTagBar = () => {
 
 			if (!tag) return;
 
-			try {
-				await mutation.mutateAsync({
-					targets,
-					tag_id: tag.id,
-					unassign: false
-				});
+			// extract the list of tags from each object in the selected items
+			const targetsTagList = Array.from(explorer.selectedItems.entries()).map(
+				// issues with type here. unsure as to why, and not causing any noticeable errors, so ignoring for now with as any
+				(item) => (item[0] as any).item.object.tags
+			);
 
-				toast(
-					t('tags_bulk_assigned', {
-						tag_name: tag.name,
-						file_count: targets.length
-					}),
-					{
-						type: 'success'
-					}
-				);
+			// iterate through each tag in the selected items and check if the tag we want to assign is already assigned
+			const areAllAssigned = targetsTagList.every((tags) => {
+				return tags.some((t: { tag_id: any }) => t.tag_id === tag.id);
+			});
+
+			try {
+				if (areAllAssigned) {
+					await mutation.mutateAsync({
+						targets,
+						tag_id: tag.id,
+						unassign: true
+					});
+
+					toast(
+						t('tags_bulk_unassigned', {
+							tag_name: tag.name,
+							file_count: targets.length
+						}),
+						{
+							type: 'success'
+						}
+					);
+				} else {
+					await mutation.mutateAsync({
+						targets,
+						tag_id: tag.id,
+						unassign: false
+					});
+
+					toast(
+						t('tags_bulk_assigned', {
+							tag_name: tag.name,
+							file_count: targets.length
+						}),
+						{
+							type: 'success'
+						}
+					);
+				}
 			} catch (err) {
 				let msg: string = t('error_unknown');
 
@@ -199,7 +232,7 @@ export const ExplorerTagBar = () => {
 	return (
 		<div
 			className={clsx(
-				'flex flex-row flex-wrap-reverse items-center justify-between gap-1 border-t border-t-app-line bg-app/90 px-3.5 py-2 text-ink-dull backdrop-blur-lg',
+				'flex flex-row flex-wrap-reverse items-center justify-between gap-1 border-t border-t-app-line bg-app/90 px-3.5 py-2 text-ink-dull backdrop-blur-lg'
 			)}
 		>
 			<em className="text-sm tracking-wide">{t('tags_bulk_instructions')}</em>
